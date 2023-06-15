@@ -5,7 +5,6 @@ import (
 	"database/sql"
 
 	"github.com/begenov/backend/internal/domain"
-	"github.com/begenov/backend/internal/repository/postgresql"
 )
 
 type Account interface {
@@ -29,6 +28,7 @@ type Transfer interface {
 }
 
 type Repository struct {
+	db       *sql.DB
 	Account  Account
 	Entry    Entry
 	Transfer Transfer
@@ -36,8 +36,9 @@ type Repository struct {
 
 func NewRepository(db *sql.DB) *Repository {
 	return &Repository{
-		Account:  postgresql.New(db),
-		Entry:    postgresql.NewEntryRepo(db),
-		Transfer: postgresql.NewTransferRepo(db),
+		db:       db,
+		Account:  New(db),
+		Entry:    NewEntryRepo(db),
+		Transfer: NewTransferRepo(db),
 	}
 }
