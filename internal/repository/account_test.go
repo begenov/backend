@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/begenov/backend/internal/config"
 	"github.com/begenov/backend/internal/domain"
 	"github.com/begenov/backend/pkg/util"
 	_ "github.com/lib/pq"
@@ -17,11 +18,6 @@ func init() {
 	NewRepoTest()
 }
 
-const (
-	dbDriver = "postgres"
-	dbSource = "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable"
-)
-
 var ctx context.Context = context.Background()
 
 var repo *AccountRepo
@@ -30,7 +26,13 @@ var db *sql.DB
 
 func NewRepoTest() {
 	var err error
-	db, err = sql.Open(dbDriver, dbSource)
+
+	cfg, err := config.Init("../..")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	db, err = sql.Open(cfg.Postgres.Driver, cfg.Postgres.DSN)
 	if err != nil {
 		log.Fatalf("cannot connect to db: %v", err)
 	}

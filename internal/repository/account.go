@@ -70,7 +70,7 @@ func (r *AccountRepo) ListAccounts(ctx context.Context, arg domain.ListAccountsP
 	if err != nil {
 		return nil, err
 	}
-	var items []domain.Account
+	items := []domain.Account{}
 	for row.Next() {
 		var i domain.Account
 		if err := row.Scan(
