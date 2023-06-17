@@ -95,6 +95,21 @@ func (r *AccountRepo) ListAccounts(ctx context.Context, arg domain.ListAccountsP
 	return items, nil
 }
 
+func (r *AccountRepo) GetAccountForUpdate(ctx context.Context, id int) (domain.Account, error) {
+	stmt := `SELECT id, owner, balance, currency, created_at FROM accounts
+	WHERE id = $1 LIMIT 1`
+	row := r.db.QueryRowContext(ctx, stmt, id)
+	var i domain.Account
+	err := row.Scan(
+		&i.ID,
+		&i.Owner,
+		&i.Balance,
+		&i.Currency,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 func (r *AccountRepo) UpdateAccount(ctx context.Context, arg domain.UpdateAccountParams) (domain.Account, error) {
 	stmt := `UPDATE accounts
 	SET balance = $2
@@ -102,6 +117,23 @@ func (r *AccountRepo) UpdateAccount(ctx context.Context, arg domain.UpdateAccoun
 	RETURNING id, owner, balance, currency, created_at`
 
 	row := r.db.QueryRowContext(ctx, stmt, arg.ID, arg.Balance)
+	var i domain.Account
+	err := row.Scan(
+		&i.ID,
+		&i.Owner,
+		&i.Balance,
+		&i.Currency,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+func (r *AccountRepo) AddAccountBalance(ctx context.Context, arg domain.AddAccountBalanceParams) (domain.Account, error) {
+	stmt := `UPDATE accounts
+	SET balance = balance + $1 
+	WHERE id = $2
+	RETURNING id, owner, balance, currency, created_at`
+	row := r.db.QueryRowContext(ctx, stmt, arg.Amount, arg.ID)
 	var i domain.Account
 	err := row.Scan(
 		&i.ID,
