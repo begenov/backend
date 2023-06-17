@@ -13,6 +13,8 @@ type Account interface {
 	GetAccount(ctx context.Context, id int) (domain.Account, error)
 	ListAccounts(ctx context.Context, arg domain.ListAccountsParams) ([]domain.Account, error)
 	UpdateAccount(ctx context.Context, arg domain.UpdateAccountParams) (domain.Account, error)
+	GetAccountForUpdate(ctx context.Context, id int) (domain.Account, error)
+	AddAccountBalance(ctx context.Context, arg domain.AddAccountBalanceParams) (domain.Account, error)
 }
 
 type Entry interface {
