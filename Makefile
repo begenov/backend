@@ -17,4 +17,7 @@ sqlc:
 test: 
 	go test -v -cover ./...
 
+migrateup-test:
+	migrate -path migration -database "postgresql://root:secret@localhost:5432/test?sslmode=disable" -verbose up
+
 .PHONY: postgres createbd dropdb migrateup migratedown
