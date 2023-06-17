@@ -7,24 +7,20 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   test:
     name: Test
     runs-on: ubuntu-latest
-    # Service containers to run with `container-job`
+  
     services:
-      # Label used to access the service container
+     
       postgres:
-        # Docker Hub image
         image: postgres
-        # Provide the password for postgres
         ports:
           - 5432:5432
         env:
           POSTGRES_USER: root
           POSTGRES_PASSWORD: secret
           POSTGRES_DB: test
-        # Set health checks to wait until postgres has started
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -45,6 +41,3 @@ jobs:
 
     - name: Run migrations
       run: make migrateup-test
-
-    # - name: Test
-    #   run: make test
