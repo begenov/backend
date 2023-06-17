@@ -25,3 +25,8 @@ type UpdateAccountParams struct {
 	ID      int `json:"id"`
 	Balance int `json:"balance"`
 }
+
+type AddAccountBalanceParams struct {
+	Amount int `json:"amount"`
+	ID     int `json:"id"`
+}
