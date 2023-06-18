@@ -3,43 +3,18 @@ package repository
 import (
 	"context"
 	"database/sql"
-	"log"
 	"testing"
 	"time"
 
-	"github.com/begenov/backend/internal/config"
 	"github.com/begenov/backend/internal/domain"
 	"github.com/begenov/backend/pkg/util"
 	_ "github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 )
 
-func init() {
-	NewRepoTest()
-}
-
 var ctx context.Context = context.Background()
 
 var repo *AccountRepo
-
-var db *sql.DB
-
-func NewRepoTest() {
-	var err error
-
-	cfg, err := config.Init("../..")
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	db, err = sql.Open(cfg.Postgres.Driver, cfg.Postgres.DSN)
-	if err != nil {
-		log.Fatalf("cannot connect to db: %v", err)
-	}
-	transferRepo = NewTransferRepo(db)
-	repo = New(db)
-	entryRepo = NewEntryRepo(db)
-}
 
 func TestCreateACcount(t *testing.T) {
 	createRandomAccount(t)
@@ -110,8 +85,10 @@ func TestListAccounts(t *testing.T) {
 }
 
 func createRandomAccount(t *testing.T) domain.Account {
+	user := createRandomUser(t)
+
 	arg := domain.CreateAccountParams{
-		Owner:    util.RandomOwner(),
+		Owner:    user.Username,
 		Balance:  int(util.RandomMany()),
 		Currency: util.RandomCurrency(),
 	}

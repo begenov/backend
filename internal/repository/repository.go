@@ -7,6 +7,7 @@ import (
 	"github.com/begenov/backend/internal/domain"
 )
 
+//go:generate mockgen -source=repository.go -destination=mocks/mock.go
 type Account interface {
 	CreateAccount(ctx context.Context, arg domain.CreateAccountParams) (domain.Account, error)
 	DeleteAccount(ctx context.Context, id int) error
@@ -29,11 +30,21 @@ type Transfer interface {
 	ListTransfers(ctx context.Context, arg domain.ListTransfersParams) ([]domain.Transfer, error)
 }
 
+type User interface {
+	CreateUser(ctx context.Context, arg domain.CreateUserParams) (domain.User, error)
+	GetUser(ctx context.Context, username string) (domain.User, error)
+}
+
+type Tx interface {
+	TransferTx(ctx context.Context, arg domain.TransferTxParams) (domain.TransferTxResult, error)
+}
+
 type Repository struct {
 	db       *sql.DB
 	Account  Account
 	Entry    Entry
 	Transfer Transfer
+	User     User
 }
 
 func NewRepository(db *sql.DB) *Repository {
@@ -42,5 +53,6 @@ func NewRepository(db *sql.DB) *Repository {
 		Account:  New(db),
 		Entry:    NewEntryRepo(db),
 		Transfer: NewTransferRepo(db),
+		User:     NewUserRepo(db),
 	}
 }
