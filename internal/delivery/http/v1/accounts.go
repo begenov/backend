@@ -1,10 +1,12 @@
 package v1
 
 import (
+	"database/sql"
 	"net/http"
 
 	"github.com/begenov/backend/internal/domain"
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
 )
 
 func (h *Handler) initAccountsRoutes(api *gin.RouterGroup) {
@@ -18,7 +20,7 @@ func (h *Handler) initAccountsRoutes(api *gin.RouterGroup) {
 
 type createAccountRequest struct {
 	Owner    string `json:"owner" binding:"required"`
-	Currency string `json:"currency" binding:"required,oneof=USD EUR"`
+	Currency string `json:"currency" binding:"required,oneof=USD EUR CAD"`
 }
 
 func (h *Handler) createAccount(ctx *gin.Context) {
@@ -35,6 +37,13 @@ func (h *Handler) createAccount(ctx *gin.Context) {
 
 	account, err := h.service.Account.CreateAccount(ctx, arg)
 	if err != nil {
+		if pqErr, ok := err.(*pq.Error); ok {
+			switch pqErr.Code.Name() {
+			case "foreign_key_violation", "unique_violation":
+				newResponse(ctx, http.StatusForbidden, "Incorrect db:"+err.Error())
+				return
+			}
+		}
 		newResponse(ctx, http.StatusInternalServerError, "Incorrect db:"+err.Error())
 		return
 	}
@@ -46,6 +55,7 @@ type getAccountRequest struct {
 }
 
 func (h *Handler) getAccountByID(ctx *gin.Context) {
+
 	var inp getAccountRequest
 	if err := ctx.BindUri(&inp); err != nil {
 		newResponse(ctx, http.StatusBadRequest, "Incorrect input:"+err.Error())
@@ -54,7 +64,11 @@ func (h *Handler) getAccountByID(ctx *gin.Context) {
 
 	account, err := h.service.Account.GetAccountByID(ctx, inp.ID)
 	if err != nil {
-		newResponse(ctx, http.StatusBadRequest, "Incorrect db:"+err.Error())
+		if err == sql.ErrNoRows {
+			newResponse(ctx, http.StatusNotFound, "Incorrect db:"+err.Error())
+			return
+		}
+		newResponse(ctx, http.StatusInternalServerError, "Incorrect db:"+err.Error())
 		return
 	}
 
