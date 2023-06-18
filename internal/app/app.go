@@ -14,6 +14,7 @@ import (
 	"github.com/begenov/backend/internal/server"
 	"github.com/begenov/backend/internal/service"
 	"github.com/begenov/backend/pkg/db"
+	"github.com/begenov/backend/pkg/hash"
 )
 
 func Run(cfg *config.Config) error {
@@ -22,9 +23,11 @@ func Run(cfg *config.Config) error {
 		return err
 	}
 
+	hash := hash.NewHash()
+
 	repo := repository.NewRepository(db)
 
-	service := service.NewService(repo)
+	service := service.NewService(repo, hash)
 
 	handler := delivery.NewHandler(service)
 
