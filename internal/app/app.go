@@ -13,6 +13,7 @@ import (
 	"github.com/begenov/backend/internal/repository"
 	"github.com/begenov/backend/internal/server"
 	"github.com/begenov/backend/internal/service"
+	"github.com/begenov/backend/pkg/auth"
 	"github.com/begenov/backend/pkg/db"
 	"github.com/begenov/backend/pkg/hash"
 )
@@ -25,11 +26,16 @@ func Run(cfg *config.Config) error {
 
 	hash := hash.NewHash()
 
+	token, err := auth.NewManager(cfg.JWT.TokenSymmetricKey)
+	if err != nil {
+		return err
+	}
+
 	repo := repository.NewRepository(db)
 
-	service := service.NewService(repo, hash)
+	service := service.NewService(repo, hash, token, cfg.JWT.AccessTokenDuration)
 
-	handler := delivery.NewHandler(service)
+	handler := delivery.NewHandler(service, token)
 
 	srv := server.NewServer(cfg, handler.Init(cfg))
 
