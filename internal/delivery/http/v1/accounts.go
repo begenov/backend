@@ -2,6 +2,7 @@ package v1
 
 import (
 	"database/sql"
+	"log"
 	"net/http"
 
 	"github.com/begenov/backend/internal/domain"
@@ -10,7 +11,7 @@ import (
 )
 
 func (h *Handler) initAccountsRoutes(api *gin.RouterGroup) {
-	accounts := api.Group("/accounts")
+	accounts := api.Group("/accounts", h.userIdentity)
 	{
 		accounts.POST("/create", h.createAccount)
 		accounts.GET("/:id", h.getAccountByID)
@@ -19,18 +20,22 @@ func (h *Handler) initAccountsRoutes(api *gin.RouterGroup) {
 }
 
 type createAccountRequest struct {
-	Owner    string `json:"owner" binding:"required"`
+	Owner    string
 	Currency string `json:"currency" binding:"required,oneof=USD EUR CAD"`
 }
 
 func (h *Handler) createAccount(ctx *gin.Context) {
+
 	var inp createAccountRequest
 	if err := ctx.BindJSON(&inp); err != nil {
 		newResponse(ctx, http.StatusBadRequest, "Incorrect input"+err.Error())
 		return
 	}
+
+	username := ctx.MustGet(userCtx).(string)
+	log.Println(username)
 	arg := domain.CreateAccountParams{
-		Owner:    inp.Owner,
+		Owner:    username,
 		Currency: inp.Currency,
 		Balance:  0,
 	}

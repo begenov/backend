@@ -2,6 +2,7 @@ package v1
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/begenov/backend/internal/domain"
@@ -10,7 +11,7 @@ import (
 )
 
 func (h *Handler) initTransferTxRoutes(api *gin.RouterGroup) {
-	transfers := api.Group("/transfers")
+	transfers := api.Group("/transfers", h.userIdentity)
 	{
 		transfers.POST("/create", h.createTransfer)
 	}
@@ -30,11 +31,21 @@ func (h *Handler) createTransfer(ctx *gin.Context) {
 		return
 	}
 
-	if !h.validAccount(ctx, inp.FromAccountID, inp.Currency) {
+	account, ok := h.validAccount(ctx, inp.FromAccountID, inp.Currency)
+	if !ok {
 		return
 	}
 
-	if !h.validAccount(ctx, inp.ToAccountID, inp.Currency) {
+	username := ctx.MustGet(userCtx).(string)
+
+	if account.Owner != username {
+		log.Println(account.Owner, username)
+		newResponse(ctx, http.StatusUnauthorized, "from account doent't belong to the authenticated user")
+		return
+	}
+
+	_, ok = h.validAccount(ctx, inp.ToAccountID, inp.Currency)
+	if !ok {
 		return
 	}
 
@@ -53,24 +64,24 @@ func (h *Handler) createTransfer(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, result)
 }
 
-func (h *Handler) validAccount(ctx *gin.Context, accountID int, currency string) bool {
+func (h *Handler) validAccount(ctx *gin.Context, accountID int, currency string) (domain.Account, bool) {
 
 	account, err := h.service.Account.GetAccountByID(ctx, accountID)
 	if err != nil {
 		if err == e.ErrRecordNotFound {
 			newResponse(ctx, http.StatusNotFound, err.Error())
-			return false
+			return account, false
 		}
 		newResponse(ctx, http.StatusInternalServerError, err.Error())
-		return false
+		return account, false
 	}
 
 	if account.Currency != currency {
 		err := fmt.Errorf("account [%d] currency mismatch: %s vs %s", account.ID, account.Currency, currency)
 		newResponse(ctx, http.StatusBadRequest, err.Error())
-		return false
+		return account, false
 	}
 
-	return true
+	return account, true
 
 }

@@ -1,8 +1,8 @@
 package v1
 
 import (
+	"database/sql"
 	"net/http"
-	"time"
 
 	"github.com/begenov/backend/internal/domain"
 	"github.com/begenov/backend/pkg/e"
@@ -13,6 +13,7 @@ func (h *Handler) initUsersRoutes(api *gin.RouterGroup) {
 	users := api.Group("/users")
 	{
 		users.POST("/create", h.createUser)
+		users.POST("/login", h.loginUser)
 	}
 }
 
@@ -21,14 +22,6 @@ type createUserRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 	FullName string `json:"full_name" binding:"required"`
 	Email    string `json:"email" binding:"required,email"`
-}
-
-type createUserResponse struct {
-	Username          string    `json:"username" binding:"required,alphanum"`
-	FullName          string    `json:"full_name" binding:"required"`
-	Email             string    `json:"email" binding:"required,email"`
-	PasswordChangedAt time.Time `json:"password_changed_at"`
-	CreatedAt         time.Time `json:"created_at"`
 }
 
 func (h *Handler) createUser(ctx *gin.Context) {
@@ -55,13 +48,50 @@ func (h *Handler) createUser(ctx *gin.Context) {
 		return
 	}
 
-	res := createUserResponse{
+	res := newUserResponse(user)
+
+	ctx.JSON(http.StatusOK, res)
+}
+
+type loginUserRequest struct {
+	Username string `json:"username" binding:"required,alphanum"`
+	Password string `json:"password" binding:"required,min=6"`
+}
+
+func (h *Handler) loginUser(ctx *gin.Context) {
+	var inp loginUserRequest
+	if err := ctx.BindJSON(&inp); err != nil {
+		newResponse(ctx, http.StatusBadRequest, "Invalid input")
+		return
+	}
+
+	res, err := h.service.User.GetUserByUsername(ctx, inp.Username, inp.Password)
+	if err != nil {
+		switch err {
+		case sql.ErrNoRows:
+			newResponse(ctx, http.StatusNotFound, "Invalid db:"+err.Error())
+			return
+		case e.ErrInvalidToken:
+			newResponse(ctx, http.StatusUnauthorized, "Invalid db:"+err.Error())
+			return
+		case e.ErrPassword:
+			newResponse(ctx, http.StatusBadRequest, "Invalid db:"+err.Error())
+			return
+		default:
+			newResponse(ctx, http.StatusInternalServerError, "Invalid db:"+err.Error())
+			return
+		}
+	}
+
+	ctx.JSON(http.StatusOK, res)
+}
+
+func newUserResponse(user domain.User) domain.UserResponse {
+	return domain.UserResponse{
 		Username:          user.Username,
 		Email:             user.Email,
 		FullName:          user.FullName,
 		CreatedAt:         user.CreatedAt,
 		PasswordChangedAt: user.PasswordChangedAt,
 	}
-
-	ctx.JSON(http.StatusOK, res)
 }

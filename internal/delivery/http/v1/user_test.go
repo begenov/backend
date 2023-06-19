@@ -10,10 +10,12 @@ import (
 	"net/http/httptest"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/begenov/backend/internal/domain"
 	mock_repository "github.com/begenov/backend/internal/repository/mocks"
 	"github.com/begenov/backend/internal/service"
+	"github.com/begenov/backend/pkg/auth"
 	"github.com/begenov/backend/pkg/e"
 	"github.com/begenov/backend/pkg/util"
 	"github.com/gin-gonic/gin"
@@ -186,12 +188,15 @@ func TestCreateUser(t *testing.T) {
 
 			store := mock_repository.NewMockUser(ctrl)
 			tc.buildStubs(store)
+			token, err := auth.NewManager(util.RandomString(6))
+			require.NoError(t, err)
+			require.NotEmpty(t, token)
 
 			service := &service.Service{
-				User: service.NewUserService(store, h),
+				User: service.NewUserService(store, h, token, 15*time.Minute),
 			}
 
-			handler := NewHandler(service)
+			handler := NewHandler(service, token)
 			recorder := httptest.NewRecorder()
 
 			data, err := json.Marshal(tc.body)

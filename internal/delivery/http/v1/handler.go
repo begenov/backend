@@ -2,6 +2,7 @@ package v1
 
 import (
 	"github.com/begenov/backend/internal/service"
+	"github.com/begenov/backend/pkg/auth"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
@@ -9,11 +10,13 @@ import (
 
 type Handler struct {
 	service *service.Service
+	token   auth.TokenManager
 }
 
-func NewHandler(service *service.Service) *Handler {
+func NewHandler(service *service.Service, token auth.TokenManager) *Handler {
 	return &Handler{
 		service: service,
+		token:   token,
 	}
 }
 
