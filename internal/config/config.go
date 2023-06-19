@@ -10,11 +10,13 @@ const (
 	defaultServerPort               = "8080"
 	defaultServerRWTimeout          = 10 * time.Second
 	defaultServerMaxHeaderMegabytes = 1
+	defaultAccessTokenDuration      = 15 * time.Minute
 )
 
 type Config struct {
 	Postgres DBConfig
 	Server   HTTPConfig
+	JWT      JWTConfig
 }
 
 type DBConfig struct {
@@ -27,6 +29,11 @@ type HTTPConfig struct {
 	ReadTimeout    time.Duration
 	WriteTimeout   time.Duration
 	MaxHeaderBytes int
+}
+
+type JWTConfig struct {
+	TokenSymmetricKey   string        `mapstructure:"TOKEN_SYMMETRIC_KEY"`
+	AccessTokenDuration time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 }
 
 func Init(path string) (*Config, error) {
@@ -51,12 +58,16 @@ func Init(path string) (*Config, error) {
 		return nil, err
 	}
 
+	if err := viper.UnmarshalKey("TOKEN_SYMMETRIC_KEY", &cfg.JWT.TokenSymmetricKey); err != nil {
+		return nil, err
+	}
+
 	cfg.Server = HTTPConfig{
 		Addr:           defaultServerPort,
 		ReadTimeout:    defaultServerRWTimeout,
 		WriteTimeout:   defaultServerRWTimeout,
 		MaxHeaderBytes: defaultServerMaxHeaderMegabytes,
 	}
-
+	cfg.JWT.AccessTokenDuration = defaultAccessTokenDuration
 	return &cfg, nil
 }
