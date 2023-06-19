@@ -2,6 +2,7 @@ package e
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/jackc/pgx"
 	"github.com/jackc/pgx/v5/pgconn"
@@ -13,7 +14,11 @@ const (
 )
 
 var ErrRecordNotFound = pgx.ErrNoRows
-
+var (
+	ErrPassword     = fmt.Errorf("incorrect password")
+	ErrExpiredToken = fmt.Errorf("token has expired")
+	ErrInvalidToken = fmt.Errorf("token is invalid")
+)
 var ErrUniqueViolation = &pgconn.PgError{
 	Code: UniqueViolation,
 }
