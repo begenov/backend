@@ -7,7 +7,8 @@ import (
 )
 
 const (
-	defaultServerPort               = "8080"
+	defaultHTTPServerPort           = "8080"
+	defaultGRPCServerPort           = "9090"
 	defaultServerRWTimeout          = 10 * time.Second
 	defaultServerMaxHeaderMegabytes = 1
 	defaultAccessTokenDuration      = 15 * time.Minute
@@ -26,6 +27,7 @@ type DBConfig struct {
 
 type HTTPConfig struct {
 	Addr           string
+	GrpcAddr       string
 	ReadTimeout    time.Duration
 	WriteTimeout   time.Duration
 	MaxHeaderBytes int
@@ -63,7 +65,8 @@ func Init(path string) (*Config, error) {
 	}
 
 	cfg.Server = HTTPConfig{
-		Addr:           defaultServerPort,
+		Addr:           defaultHTTPServerPort,
+		GrpcAddr:       defaultGRPCServerPort,
 		ReadTimeout:    defaultServerRWTimeout,
 		WriteTimeout:   defaultServerRWTimeout,
 		MaxHeaderBytes: defaultServerMaxHeaderMegabytes,
