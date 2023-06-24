@@ -5,10 +5,17 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/begenov/backend/internal/config"
 	"github.com/begenov/backend/internal/delivery/gapi"
+	httpv1 "github.com/begenov/backend/internal/delivery/http"
+
 	"github.com/begenov/backend/internal/repository"
+	"github.com/begenov/backend/internal/server"
 	"github.com/begenov/backend/internal/service"
 	"github.com/begenov/backend/pb"
 	"github.com/begenov/backend/pkg/auth"
@@ -37,33 +44,35 @@ func Run(cfg *config.Config) error {
 
 	service := service.NewService(repo, hash, token, cfg.JWT.AccessTokenDuration)
 
-	// handler := delivery.NewHandler(service, token)
+	handler := httpv1.NewHandler(service, token)
 
-	// srv := server.NewServer(cfg, handler.Init(cfg))
+	srv := server.NewServer(cfg, handler.Init(cfg))
+
 	go runGatewayServer(cfg, service, token)
 	runGrpcServer(cfg, service, token)
-	// go func() {
-	// 	if err = srv.Run(); err != nil {
-	// 		log.Fatalf("error occurred while running http server: %s\n", err.Error())
-	// 	}
-	// }()
 
-	// log.Println("Server started")
+	go func() {
+		if err = srv.Run(); err != nil {
+			log.Fatalf("error occurred while running http server: %s\n", err.Error())
+		}
+	}()
 
-	// quit := make(chan os.Signal, 1)
+	log.Println("Server started")
 
-	// signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
+	quit := make(chan os.Signal, 1)
 
-	// <-quit
+	signal.Notify(quit, syscall.SIGTERM, syscall.SIGINT)
 
-	// const timeout = 5 * time.Second
+	<-quit
 
-	// ctx, shutdown := context.WithTimeout(context.Background(), timeout)
-	// defer shutdown()
+	const timeout = 5 * time.Second
 
-	// if err := srv.Stop(ctx); err != nil {
-	// 	log.Printf("failed to stop server: %v", err)
-	// }
+	ctx, shutdown := context.WithTimeout(context.Background(), timeout)
+	defer shutdown()
+
+	if err := srv.Stop(ctx); err != nil {
+		log.Printf("failed to stop server: %v", err)
+	}
 
 	return nil
 }
@@ -109,7 +118,6 @@ func runGatewayServer(cfg *config.Config, service *service.Service, token auth.T
 
 	mux := http.NewServeMux()
 	mux.Handle("/", grpcMux)
-
 	listener, err := net.Listen("tcp", "localhost:"+cfg.Server.Addr)
 	if err != nil {
 		log.Fatal("cannot create listener", err)
