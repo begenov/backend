@@ -5,6 +5,7 @@ package pb;
 import "google/api/annotations.proto";
 import "rpc_create_user.proto";
 import "rpc_login_user.proto";
+import "rpc_account.proto";
 
 
 option go_package = "github.com/begenov/backend/pb";
@@ -19,6 +20,12 @@ service SimpleBank {
     rpc LoginUser (LoginUserRequest) returns (LoginUserResponse) {
         option (google.api.http) = {
             post: "/api/v1/login_user"
+            body: "*"
+        };
+    }
+    rpc CreateAccount (CreateAccountRequest) returns (ResponseAccount) {
+        option (google.api.http) = {
+            post: "/api/v1/accounts/create"
             body: "*"
         };
     }

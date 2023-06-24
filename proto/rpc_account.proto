@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package pb;
+
+option go_package = "github.com/begenov/backend/pb";
+
+import "google/protobuf/timestamp.proto";
+
+message CreateAccountRequest {
+    string currency = 1;
+}
+
+message ResponseAccount {
+    int32 ID = 1;
+    string owner = 2;
+    int32 balance = 3;
+    string currency = 4;
+    google.protobuf.Timestamp created_at = 5;
+}
